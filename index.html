@@ -38,89 +38,100 @@
   /* Player Panels */
   .player-panel {
     background: #1a2634;
-    border-radius: 10px;
-    padding: 14px 18px;
+    border-radius: 12px;
+    padding: 16px 20px;
     border: 2px solid transparent;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
   }
-  .player-panel.active { border-color: #4fc3f7; box-shadow: 0 0 12px rgba(79,195,247,0.25); }
-  .player-panel.p1.active { border-color: #4fc3f7; box-shadow: 0 0 12px rgba(79,195,247,0.25); }
-  .player-panel.p2.active { border-color: #ef9a9a; box-shadow: 0 0 12px rgba(239,154,154,0.25); }
+  .player-panel.active { transform: translateY(-3px); }
+  .player-panel.p1.active { border-color: #4fc3f7; box-shadow: 0 8px 20px rgba(79,195,247,0.15); }
+  .player-panel.p2.active { border-color: #e0e0e0; box-shadow: 0 8px 20px rgba(255,255,255,0.15); }
   .player-panel h3 {
-    font-size: 1em; margin-bottom: 8px;
+    font-size: 1.1em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;
   }
-  .p1 h3 { color: #e0e0e0; }
+  .p1 h3 { color: #4fc3f7; }
   .p2 h3 { color: #ffffff; }
   .pieces-played {
-    font-size: 0.85em; color: #aaa; margin-bottom: 6px;
+    font-size: 0.85em; color: #aaa; margin-bottom: 12px;
   }
-  .pieces-played strong { color: #fff; }
+  .pieces-played strong { color: #fff; font-size: 1.1em; }
   .inventory {
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 8px;
   }
   .inv-section {
     display: flex; gap: 8px; align-items: center;
   }
   .inv-section-label {
     font-size: 0.7em;
-    color: #777;
+    color: #888;
     width: 55px;
     text-align: right;
     flex-shrink: 0;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
+  
+  /* Inventory Pieces */
   .inv-piece {
     width: 50px; height: 50px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 0.75em;
+    font-weight: bold; font-size: 0.8em;
     cursor: pointer;
     border: 3px solid transparent;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
-  }
-  .inv-piece.disabled {
-    background: #616161 !important;
-    opacity: 0.5;
-    cursor: not-allowed;
-    border-color: transparent !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
   .inv-piece.selected {
-    border-color: #fff;
-    transform: scale(1.15);
-    box-shadow: 0 0 16px rgba(255,255,255,0.5);
+    border-color: #4fc3f7;
+    transform: scale(1.15) translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4), 0 0 0 2px rgba(79,195,247,0.5);
   }
-  .inv-piece.p1-piece.L { background: #212121; color: #fff; }
-  .inv-piece.p1-piece.M { background: #303030; color: #fff; }
-  .inv-piece.p1-piece.S { background: #424242; color: #fff; }
-  .inv-piece.p2-piece.L { background: #FFFFFF; color: #000; }
-  .inv-piece.p2-piece.M { background: #E0E0E0; color: #000; }
-  .inv-piece.p2-piece.S { background: #BDBDBD; color: #000; }
+  
+  /* Distinct disabled style (ghost slots) */
+  .inv-piece.disabled {
+    background: transparent !important;
+    border: 2px dashed rgba(255, 255, 255, 0.15) !important;
+    color: rgba(255, 255, 255, 0.15) !important;
+    opacity: 1;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: scale(0.95);
+  }
+
+  .inv-piece.p1-piece.L { background: #1a1a1a; color: #eee; border: 1px solid #333; }
+  .inv-piece.p1-piece.M { background: #2a2a2a; color: #eee; border: 1px solid #444; }
+  .inv-piece.p1-piece.S { background: #3a3a3a; color: #eee; border: 1px solid #555; }
+  
+  .inv-piece.p2-piece.L { background: #f5f5f5; color: #111; }
+  .inv-piece.p2-piece.M { background: #e0e0e0; color: #111; }
+  .inv-piece.p2-piece.S { background: #cccccc; color: #111; }
 
   /* Board */
   .board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    background: #263238;
-    padding: 6px;
+    gap: 8px;
+    background: #1a222c;
+    padding: 8px;
     border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.05);
   }
   .cell {
     width: 110px; height: 110px;
-    background: #1a2634;
+    background: #24303d;
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: background 0.15s;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
   }
-  .cell:hover { background: #243447; }
+  .cell:hover { background: #2c3a4a; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4); }
   .cell.highlight-target {
-    background: #2a3f2a !important;
-    box-shadow: inset 0 0 12px rgba(76,175,80,0.4);
+    background: #2a4030 !important;
+    box-shadow: inset 0 0 20px rgba(76,175,80,0.5);
   }
 
   /* Piece on board */
@@ -131,72 +142,92 @@
     font-weight: bold;
     color: #fff;
     font-size: 0.7em;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
   }
-  .board-piece.L { width: 90px; height: 90px; font-size: 0.8em; }
-  .board-piece.M { width: 66px; height: 66px; }
-  .board-piece.S { width: 44px; height: 44px; font-size: 0.6em; }
-  .board-piece.p1-piece { background: radial-gradient(circle, #424242, #000000); border: 2px solid #616161; }
-  .board-piece.p2-piece { background: radial-gradient(circle, #FFFFFF, #BDBDBD); border: 2px solid #9E9E9E; color: #000; }
+  .board-piece.L { width: 92px; height: 92px; font-size: 0.85em; }
+  .board-piece.M { width: 68px; height: 68px; }
+  .board-piece.S { width: 44px; height: 44px; font-size: 0.65em; }
+  
+  .board-piece.p1-piece { background: radial-gradient(circle at 30% 30%, #444, #0a0a0a); border: 2px solid #555; }
+  .board-piece.p2-piece { background: radial-gradient(circle at 30% 30%, #fff, #bbb); border: 2px solid #999; color: #111; }
 
   /* Status */
   .status-bar {
     text-align: center;
     font-size: 1.1em;
-    padding: 10px 20px;
+    padding: 12px 20px;
     border-radius: 8px;
     background: #1a2634;
-    min-width: 300px;
+    min-width: 320px;
     color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-left: 4px solid #4fc3f7;
+    transition: all 0.3s;
   }
-  .status-bar.win { background: #2a3f2a; color: #81C784; font-weight: bold; }
+  .status-bar.win { 
+    background: #1e3323; 
+    color: #81C784; 
+    font-weight: bold; 
+    border-left-color: #81C784;
+  }
 
   /* Buttons */
   .buttons {
-    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px;
   }
   .btn {
-    padding: 10px 20px;
+    padding: 10px 18px;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.9em;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
-  .btn:hover { transform: translateY(-1px); }
-  .btn-analyze {
-    background: #3949AB;
-    color: #fff;
-  }
-  .btn-analyze:hover { background: #5C6BC0; }
-  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .btn-reset {
-    background: #455A64;
-    color: #fff;
-  }
-  .btn-reset:hover { background: #607D8B; }
-  .btn-auto {
-    background: #2E7D32;
-    color: #fff;
-  }
-  .btn-auto:hover { background: #388E3C; }
-  .btn-auto:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .btn-undo {
-    background: #8E24AA;
-    color: #fff;
-  }
-  .btn-undo:hover { background: #AB47BC; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+  .btn:active { transform: translateY(0); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  
+  .btn-analyze { background: #3949AB; color: #fff; }
+  .btn-analyze:hover:not(:disabled) { background: #5C6BC0; }
+  
+  .btn-auto { background: #2E7D32; color: #fff; }
+  .btn-auto:hover:not(:disabled) { background: #388E3C; }
+  
+  .btn-undo { background: #8E24AA; color: #fff; }
+  .btn-undo:hover:not(:disabled) { background: #AB47BC; }
+  
+  .btn-reset { background: #455A64; color: #fff; }
+  .btn-reset:hover:not(:disabled) { background: #607D8B; }
 
   /* Selected piece indicator */
   .selected-indicator {
     text-align: center;
     font-size: 0.85em;
-    color: #888;
+    color: #aaa;
     min-height: 1.2em;
+    font-style: italic;
   }
 
   /* AI move highlight */
   .cell.ai-source { box-shadow: inset 0 0 16px rgba(255,235,59,0.6); }
+
+  /* Footer Credit */
+  .footer-credit {
+    margin-top: auto;
+    padding: 30px 10px 10px 10px;
+    color: #0f1923; /* Same as background */
+    font-size: 0.8em;
+    transition: color 0.4s ease;
+    cursor: default;
+    user-select: none;
+  }
+  .footer-credit:hover {
+    color: #666; /* Fades in on hover */
+  }
 </style>
 </head>
 <body>
@@ -220,9 +251,9 @@
     <div class="board" id="board"></div>
     <div class="selected-indicator" id="selected-indicator"></div>
   <div class="buttons">
-    <button class="btn btn-analyze" id="analyze-btn" onclick="analyzeBestMove()">Analyze Best Move</button>
-    <button class="btn btn-auto" id="auto-btn" onclick="autoPlayBestMove()">Auto Play Best Move</button>
-    <button class="btn btn-undo" onclick="undoLastMove()">Undo Move</button>
+    <button class="btn btn-analyze" id="analyze-btn" onclick="analyzeBestMove()">Analyze Move</button>
+    <button class="btn btn-auto" id="auto-btn" onclick="autoPlayBestMove()">Auto Play Move</button>
+    <button class="btn btn-undo" onclick="undoLastMove()">Undo</button>
     <button class="btn btn-reset" onclick="resetGame()">New Game</button>
   </div>
   </div>
@@ -236,6 +267,8 @@
     </div>
   </div>
 </div>
+
+<div class="footer-credit">Created by Helios</div>
 
 <script>
 // ============================================================
@@ -336,8 +369,9 @@ function getLegalMoves(state, player) {
         targets = emptySquares | opp_S | opp_M;
       }
 
-      if (player === 'p1' && state.piecesPlayed.p1 === 0) {
-        targets &= ~(1 << 4); // Clear the center square bit
+      // Restrict P1 from playing LARGE piece on center square on turn 1
+      if (player === 'p1' && state.piecesPlayed.p1 === 0 && size === 'L') {
+        targets &= ~(1 << 4);
       }
 
       for (let sq = 0; sq < 9; sq++) {
@@ -816,8 +850,19 @@ function renderPiecesPlayed() {
 }
 
 function renderActivePlayer() {
-  document.getElementById('p1-panel').classList.toggle('active', gameState.currentPlayer === 'p1');
-  document.getElementById('p2-panel').classList.toggle('active', gameState.currentPlayer === 'p2');
+  const p1Panel = document.getElementById('p1-panel');
+  const p2Panel = document.getElementById('p2-panel');
+  const statusBar = document.getElementById('status');
+  
+  if (gameState.currentPlayer === 'p1') {
+    p1Panel.classList.add('active');
+    p2Panel.classList.remove('active');
+    if(!gameState.gameOver) statusBar.style.borderLeftColor = '#4fc3f7';
+  } else {
+    p2Panel.classList.add('active');
+    p1Panel.classList.remove('active');
+    if(!gameState.gameOver) statusBar.style.borderLeftColor = '#ffffff';
+  }
 }
 
 function renderStatus() {
@@ -827,7 +872,7 @@ function renderStatus() {
     if (gameState.winner === 'draw') {
       el.textContent = 'Game Over — Draw!';
     } else {
-      const name = gameState.winner === 'p1' ? 'Player 1' : 'Player 2';
+      const name = gameState.winner === 'p1' ? 'Player 1 (Black)' : 'Player 2 (White)';
       el.textContent = `Game Over — ${name} wins!`;
     }
   } else {
@@ -938,7 +983,7 @@ function analyzeBestMove() {
     }
 
     btn.disabled = false;
-    btn.textContent = 'Analyze Best Move';
+    btn.textContent = 'Analyze Move';
     isProcessing = false;
   }, 50);
 }
@@ -977,7 +1022,7 @@ function autoPlayBestMove() {
     } else {
       updateStatus("No legal moves available.");
       btn.disabled = false;
-      btn.textContent = 'Auto Play Best Move';
+      btn.textContent = 'Auto Play Move';
       isProcessing = false;
     }
   }, 50);
@@ -1011,16 +1056,16 @@ function playBestMove(bestMove, btn) {
     selectedPiece = null;
     cachedBestMove = null;
     updateSelectedIndicator();
+
+    updateStatus(`${playerName} played ${sizeName[bestMove.size]} → square ${bestMove.square + 1}`);
     renderAll();
 
     cells[bestMove.square].classList.remove('highlight-target');
 
-    updateStatus(`${playerName} played ${sizeName[bestMove.size]} → square ${bestMove.square + 1}`);
-
     btn.disabled = false;
-    btn.textContent = 'Auto Play Best Move';
+    btn.textContent = 'Auto Play Move';
     isProcessing = false;
-  }, 1200);
+  }, 150);
 }
 
 // ============================================================
@@ -1038,10 +1083,10 @@ function resetGame() {
   renderAll();
   const analyzeBtn = document.getElementById('analyze-btn');
   analyzeBtn.disabled = false;
-  analyzeBtn.textContent = 'Analyze Best Move';
+  analyzeBtn.textContent = 'Analyze Move';
   const autoBtn = document.getElementById('auto-btn');
   autoBtn.disabled = false;
-  autoBtn.textContent = 'Auto Play Best Move';
+  autoBtn.textContent = 'Auto Play Move';
 }
 
 // ============================================================
