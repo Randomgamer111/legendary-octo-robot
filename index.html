@@ -49,8 +49,8 @@
   .player-panel h3 {
     font-size: 1em; margin-bottom: 8px;
   }
-  .p1 h3 { color: #4fc3f7; }
-  .p2 h3 { color: #ef9a9a; }
+  .p1 h3 { color: #e0e0e0; }
+  .p2 h3 { color: #ffffff; }
   .pieces-played {
     font-size: 0.85em; color: #aaa; margin-bottom: 6px;
   }
@@ -91,12 +91,12 @@
     transform: scale(1.15);
     box-shadow: 0 0 16px rgba(255,255,255,0.5);
   }
-  .inv-piece.p1-piece.L { background: #1565C0; color: #fff; }
-  .inv-piece.p1-piece.M { background: #1E88E5; color: #fff; }
-  .inv-piece.p1-piece.S { background: #42A5F5; color: #fff; }
-  .inv-piece.p2-piece.L { background: #C62828; color: #fff; }
-  .inv-piece.p2-piece.M { background: #E53935; color: #fff; }
-  .inv-piece.p2-piece.S { background: #EF5350; color: #fff; }
+  .inv-piece.p1-piece.L { background: #212121; color: #fff; }
+  .inv-piece.p1-piece.M { background: #303030; color: #fff; }
+  .inv-piece.p1-piece.S { background: #424242; color: #fff; }
+  .inv-piece.p2-piece.L { background: #FFFFFF; color: #000; }
+  .inv-piece.p2-piece.M { background: #E0E0E0; color: #000; }
+  .inv-piece.p2-piece.S { background: #BDBDBD; color: #000; }
 
   /* Board */
   .board {
@@ -135,8 +135,8 @@
   .board-piece.L { width: 90px; height: 90px; font-size: 0.8em; }
   .board-piece.M { width: 66px; height: 66px; }
   .board-piece.S { width: 44px; height: 44px; font-size: 0.6em; }
-  .board-piece.p1-piece { background: radial-gradient(circle, #42A5F5, #1565C0); border: 2px solid #42A5F5; }
-  .board-piece.p2-piece { background: radial-gradient(circle, #EF5350, #C62828); border: 2px solid #EF5350; }
+  .board-piece.p1-piece { background: radial-gradient(circle, #424242, #000000); border: 2px solid #616161; }
+  .board-piece.p2-piece { background: radial-gradient(circle, #FFFFFF, #BDBDBD); border: 2px solid #9E9E9E; color: #000; }
 
   /* Status */
   .status-bar {
@@ -208,7 +208,7 @@
   <!-- Left Panel: Player 1 -->
   <div class="side-panel">
     <div class="player-panel p1 active" id="p1-panel">
-      <h3>Player 1 (Blue)</h3>
+      <h3>Player 1 (Black)</h3>
       <div class="pieces-played">Pieces on board: <strong id="p1-played">0</strong></div>
       <div class="inventory" id="p1-inventory"></div>
     </div>
@@ -230,7 +230,7 @@
   <!-- Right Panel: Player 2 -->
   <div class="side-panel">
     <div class="player-panel p2" id="p2-panel">
-      <h3>Player 2 (Red)</h3>
+      <h3>Player 2 (White)</h3>
       <div class="pieces-played">Pieces on board: <strong id="p2-played">0</strong></div>
       <div class="inventory" id="p2-inventory"></div>
     </div>
@@ -324,19 +324,23 @@ function getLegalMoves(state, player) {
   const legalMoves = [];
   const sizes = ['S', 'M', 'L'];
 
-  for (const size of sizes) {
-    if (state.inventory[player][size] <= 0) continue;
+    for (const size of sizes) {
+      if (state.inventory[player][size] <= 0) continue;
 
-    let targets;
-    if (size === 'S') {
-      targets = emptySquares;
-    } else if (size === 'M') {
-      targets = emptySquares | opp_S;
-    } else { // L
-      targets = emptySquares | opp_S | opp_M;
-    }
+      let targets;
+      if (size === 'S') {
+        targets = emptySquares;
+      } else if (size === 'M') {
+        targets = emptySquares | opp_S;
+      } else { // L
+        targets = emptySquares | opp_S | opp_M;
+      }
 
-    for (let sq = 0; sq < 9; sq++) {
+      if (player === 'p1' && state.piecesPlayed.p1 === 0) {
+        targets &= ~(1 << 4); // Clear the center square bit
+      }
+
+      for (let sq = 0; sq < 9; sq++) {
       if (targets & (1 << sq)) {
         legalMoves.push({ player, size, square: sq });
       }
@@ -476,11 +480,13 @@ function heuristicEvaluation(state, forPlayer) {
     if ((otherOcc & wm) === wm) return -1000000;
   }
 
+  const attackWeight = 40;
+  const defenseWeight = forPlayer === 'p2' ? 150 : 40;
   for (const tm of TWO_MASKS) {
     const for2 = (forOcc & tm) === tm;
     const other2 = (otherOcc & tm) === tm;
-    if (for2 && !other2) score += 40;
-    if (other2 && !for2) score -= 40;
+    if (for2 && !other2) score += attackWeight;
+    if (other2 && !for2) score -= defenseWeight;
   }
 
   score += (state.piecesPlayed[forPlayer] - state.piecesPlayed[other]) * 3;
@@ -922,7 +928,7 @@ function analyzeBestMove() {
       updateSelectedIndicator();
       renderInventory();
 
-      updateStatus(`${playerName} should play ${sizeName[bestMove.size]} at square ${bestMove.square}`);
+      updateStatus(`${playerName} should play ${sizeName[bestMove.size]} at square ${bestMove.square + 1}`);
 
       setTimeout(() => {
         cells[bestMove.square].classList.remove('highlight-target');
@@ -1009,7 +1015,7 @@ function playBestMove(bestMove, btn) {
 
     cells[bestMove.square].classList.remove('highlight-target');
 
-    updateStatus(`${playerName} played ${sizeName[bestMove.size]} → square ${bestMove.square}`);
+    updateStatus(`${playerName} played ${sizeName[bestMove.size]} → square ${bestMove.square + 1}`);
 
     btn.disabled = false;
     btn.textContent = 'Auto Play Best Move';
