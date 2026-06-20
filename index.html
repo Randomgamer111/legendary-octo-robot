@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dumpling Chess</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f1923;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  h1 { font-size: 2.4em; margin-bottom: 8px; color: #fff; text-shadow: 0 0 10px rgba(100,180,255,0.4); }
+  .subtitle { font-size: 0.85em; color: #888; margin-bottom: 18px; }
+
+  /* Layout */
+  .game-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 200px;
+  }
+  .board-section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  /* Player Panels */
+  .player-panel {
+    background: #1a2634;
+    border-radius: 10px;
+    padding: 14px 18px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .player-panel.active { border-color: #4fc3f7; box-shadow: 0 0 12px rgba(79,195,247,0.25); }
+  .player-panel.p1.active { border-color: #4fc3f7; box-shadow: 0 0 12px rgba(79,195,247,0.25); }
+  .player-panel.p2.active { border-color: #ef9a9a; box-shadow: 0 0 12px rgba(239,154,154,0.25); }
+  .player-panel h3 {
+    font-size: 1em; margin-bottom: 8px;
+  }
+  .p1 h3 { color: #4fc3f7; }
+  .p2 h3 { color: #ef9a9a; }
+  .pieces-played {
+    font-size: 0.85em; color: #aaa; margin-bottom: 6px;
+  }
+  .pieces-played strong { color: #fff; }
+  .inventory {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .inv-section {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .inv-section-label {
+    font-size: 0.7em;
+    color: #777;
+    width: 55px;
+    text-align: right;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .inv-piece {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 0.75em;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .inv-piece.disabled {
+    background: #616161 !important;
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: transparent !important;
+  }
+  .inv-piece.selected {
+    border-color: #fff;
+    transform: scale(1.15);
+    box-shadow: 0 0 16px rgba(255,255,255,0.5);
+  }
+  .inv-piece.p1-piece.L { background: #1565C0; color: #fff; }
+  .inv-piece.p1-piece.M { background: #1E88E5; color: #fff; }
+  .inv-piece.p1-piece.S { background: #42A5F5; color: #fff; }
+  .inv-piece.p2-piece.L { background: #C62828; color: #fff; }
+  .inv-piece.p2-piece.M { background: #E53935; color: #fff; }
+  .inv-piece.p2-piece.S { background: #EF5350; color: #fff; }
+
+  /* Board */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #263238;
+    padding: 6px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+  .cell {
+    width: 110px; height: 110px;
+    background: #1a2634;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .cell:hover { background: #243447; }
+  .cell.highlight-target {
+    background: #2a3f2a !important;
+    box-shadow: inset 0 0 12px rgba(76,175,80,0.4);
+  }
+
+  /* Piece on board */
+  .board-piece {
+    border-radius: 50%;
+    position: absolute;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+    color: #fff;
+    font-size: 0.7em;
+  }
+  .board-piece.L { width: 90px; height: 90px; font-size: 0.8em; }
+  .board-piece.M { width: 66px; height: 66px; }
+  .board-piece.S { width: 44px; height: 44px; font-size: 0.6em; }
+  .board-piece.p1-piece { background: radial-gradient(circle, #42A5F5, #1565C0); border: 2px solid #42A5F5; }
+  .board-piece.p2-piece { background: radial-gradient(circle, #EF5350, #C62828); border: 2px solid #EF5350; }
+
+  /* Status */
+  .status-bar {
+    text-align: center;
+    font-size: 1.1em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #1a2634;
+    min-width: 300px;
+    color: #fff;
+  }
+  .status-bar.win { background: #2a3f2a; color: #81C784; font-weight: bold; }
+
+  /* Buttons */
+  .buttons {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-analyze {
+    background: #3949AB;
+    color: #fff;
+  }
+  .btn-analyze:hover { background: #5C6BC0; }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-reset {
+    background: #455A64;
+    color: #fff;
+  }
+  .btn-reset:hover { background: #607D8B; }
+  .btn-auto {
+    background: #2E7D32;
+    color: #fff;
+  }
+  .btn-auto:hover { background: #388E3C; }
+  .btn-auto:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-undo {
+    background: #8E24AA;
+    color: #fff;
+  }
+  .btn-undo:hover { background: #AB47BC; }
+
+  /* Selected piece indicator */
+  .selected-indicator {
+    text-align: center;
+    font-size: 0.85em;
+    color: #888;
+    min-height: 1.2em;
+  }
+
+  /* AI move highlight */
+  .cell.ai-source { box-shadow: inset 0 0 16px rgba(255,235,59,0.6); }
+</style>
+</head>
+<body>
+
+<h1>Dumpling Chess</h1>
+<div class="subtitle">Place larger pieces to gobble — 3 in a row to win!</div>
+
+<div class="game-container">
+  <!-- Left Panel: Player 1 -->
+  <div class="side-panel">
+    <div class="player-panel p1 active" id="p1-panel">
+      <h3>Player 1 (Blue)</h3>
+      <div class="pieces-played">Pieces on board: <strong id="p1-played">0</strong></div>
+      <div class="inventory" id="p1-inventory"></div>
+    </div>
+  </div>
+
+  <!-- Center: Board -->
+  <div class="board-section">
+    <div class="status-bar" id="status">Player 1's turn — select a piece</div>
+    <div class="board" id="board"></div>
+    <div class="selected-indicator" id="selected-indicator"></div>
+  <div class="buttons">
+    <button class="btn btn-analyze" id="analyze-btn" onclick="analyzeBestMove()">Analyze Best Move</button>
+    <button class="btn btn-auto" id="auto-btn" onclick="autoPlayBestMove()">Auto Play Best Move</button>
+    <button class="btn btn-undo" onclick="undoLastMove()">Undo Move</button>
+    <button class="btn btn-reset" onclick="resetGame()">New Game</button>
+  </div>
+  </div>
+
+  <!-- Right Panel: Player 2 -->
+  <div class="side-panel">
+    <div class="player-panel p2" id="p2-panel">
+      <h3>Player 2 (Red)</h3>
+      <div class="pieces-played">Pieces on board: <strong id="p2-played">0</strong></div>
+      <div class="inventory" id="p2-inventory"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STEP 1: State Representation (Bitboards & Zobrist Hashing)
+// ============================================================
+
+// 8 winning bitmasks (3-in-a-row on 3x3 board)
+const WIN_MASKS = [
+  0b111000000, // top row
+  0b000111000, // middle row
+  0b000000111, // bottom row
+  0b100100100, // left column
+  0b010010010, // middle column
+  0b001001001, // right column
+  0b100010001, // main diagonal
+  0b001010100, // anti-diagonal
+];
+
+// 2-in-a-row patterns (for heuristic)
+const TWO_MASKS = [
+  0b110000000, 0b011000000,
+  0b000110000, 0b000011000,
+  0b000000110, 0b000000011,
+  0b100100000, 0b010010000, 0b001001000,
+  0b100010000, 0b010001000, 0b001000100,
+  0b100010001, 0b001010100, // diagonals
+  0b100000100, 0b001000001, // corner 2s
+];
+
+// Zobrist hashing: precompute random 32-bit integers
+const zobristTable = new Uint32Array(9 * 6 + 1); // 9 squares * 6 piece types + 1 turn
+(function initZobrist() {
+  for (let i = 0; i < zobristTable.length; i++) {
+    zobristTable[i] = Math.random() * 0xFFFFFFFF | 0;
+  }
+})();
+
+// Piece type indices for Zobrist: 0=S, 1=M, 2=L for p1; 3=S, 4=M, 5=L for p2
+const PIECE_IDX = { S: 0, M: 1, L: 2 };
+
+function createInitialState() {
+  return {
+    p1_S: 0, p1_M: 0, p1_L: 0,
+    p2_S: 0, p2_M: 0, p2_L: 0,
+    inventory: {
+      p1: { L: 2, M: 3, S: 3 },
+      p2: { L: 2, M: 3, S: 3 }
+    },
+    piecesPlayed: { p1: 0, p2: 0 },
+    currentPlayer: 'p1',
+    hash: zobristTable[54], // turn key
+    gameOver: false,
+    winner: null
+  };
+}
+
+
+// ============================================================
+// STEP 2: Move Generation & In-Place Primitive MakeMove / UndoMove
+// ============================================================
+
+function getOpponent(player) { return player === 'p1' ? 'p2' : 'p1'; }
+
+// Precomputed bitboard property name lookup tables
+const PLAYER_BB = { p1: { S: 'p1_S', M: 'p1_M', L: 'p1_L' }, p2: { S: 'p2_S', M: 'p2_M', L: 'p2_L' } };
+const OPP_BB = { p1: { S: 'p2_S', M: 'p2_M', L: 'p2_L' }, p2: { S: 'p1_S', M: 'p1_M', L: 'p1_L' } };
+
+// Move ordering: proper sort by priority for alpha-beta cutoffs
+function orderMoves(moves) {
+  moves.sort((a, b) => {
+    const va = (a.size === 'M' ? 6 : a.size === 'L' ? 4 : 0) + (a.square === 4 ? 3 : 0) + ([0,2,6,8].includes(a.square) ? 1 : 0);
+    const vb = (b.size === 'M' ? 6 : b.size === 'L' ? 4 : 0) + (b.square === 4 ? 3 : 0) + ([0,2,6,8].includes(b.square) ? 1 : 0);
+    return vb - va; // descending priority
+  });
+  return moves;
+}
+
+function getLegalMoves(state, player) {
+  const opp = getOpponent(player);
+  const allOccupied = state.p1_S | state.p1_M | state.p1_L | state.p2_S | state.p2_M | state.p2_L;
+  const emptySquares = (~allOccupied) & 0x1FF;
+
+  const opp_S = opp === 'p1' ? state.p1_S : state.p2_S;
+  const opp_M = opp === 'p1' ? state.p1_M : state.p2_M;
+
+  const legalMoves = [];
+  const sizes = ['S', 'M', 'L'];
+
+  for (const size of sizes) {
+    if (state.inventory[player][size] <= 0) continue;
+
+    let targets;
+    if (size === 'S') {
+      targets = emptySquares;
+    } else if (size === 'M') {
+      targets = emptySquares | opp_S;
+    } else { // L
+      targets = emptySquares | opp_S | opp_M;
+    }
+
+    for (let sq = 0; sq < 9; sq++) {
+      if (targets & (1 << sq)) {
+        legalMoves.push({ player, size, square: sq });
+      }
+    }
+  }
+  return legalMoves;
+}
+
+// makeMove: mutates state in place, returns capturedPiece as primitive int
+// 0: None, 1: captured opponent S, 2: captured opponent M
+function makeMove(state, move) {
+  const { player, size, square } = move;
+  const moveMask = 1 << square;
+  const opp = player === 'p1' ? 'p2' : 'p1';
+  const pi = player === 'p1' ? 0 : 3;
+  const opi = player === 'p1' ? 3 : 0;
+  let capturedPiece = 0; // 0: None, 1: S, 2: M
+
+  if (size === 'M') {
+    if (state[OPP_BB[player].S] & moveMask) { capturedPiece = 1; state[OPP_BB[player].S] &= ~moveMask; }
+  } else if (size === 'L') {
+    if (state[OPP_BB[player].S] & moveMask) { capturedPiece = 1; state[OPP_BB[player].S] &= ~moveMask; }
+    else if (state[OPP_BB[player].M] & moveMask) { capturedPiece = 2; state[OPP_BB[player].M] &= ~moveMask; }
+  }
+
+  state[PLAYER_BB[player][size]] |= moveMask;
+  state.inventory[player][size]--;
+  state.piecesPlayed[player]++;
+  state.currentPlayer = opp;
+
+  // Update Zobrist hash
+  if (capturedPiece === 1) state.hash ^= zobristTable[square * 6 + opi + 0];
+  else if (capturedPiece === 2) state.hash ^= zobristTable[square * 6 + opi + 1];
+  state.hash ^= zobristTable[square * 6 + pi + PIECE_IDX[size]];
+  state.hash ^= zobristTable[54];
+
+  return capturedPiece;
+}
+
+// undoMove: perfectly reverses makeMove using primitive capturedPiece
+function undoMove(state, move, capturedPiece) {
+  const { player, size, square } = move;
+  const moveMask = 1 << square;
+  const pi = player === 'p1' ? 0 : 3;
+  const opi = player === 'p1' ? 3 : 0;
+
+  state[PLAYER_BB[player][size]] &= ~moveMask;
+  if (capturedPiece === 1) state[OPP_BB[player].S] |= moveMask;
+  else if (capturedPiece === 2) state[OPP_BB[player].M] |= moveMask;
+
+  state.inventory[player][size]++;
+  state.piecesPlayed[player]--;
+  state.currentPlayer = player;
+
+  // Restore Zobrist hash (XOR is its own inverse)
+  if (capturedPiece === 1) state.hash ^= zobristTable[square * 6 + opi + 0];
+  else if (capturedPiece === 2) state.hash ^= zobristTable[square * 6 + opi + 1];
+  state.hash ^= zobristTable[square * 6 + pi + PIECE_IDX[size]];
+  state.hash ^= zobristTable[54];
+}
+
+// ============================================================
+// STEP 3: Win Detection & Evaluation
+// ============================================================
+
+function checkWin(state, player) {
+  let occupancy = 0;
+  const bbs = player === 'p1'
+    ? [state.p1_S, state.p1_M, state.p1_L]
+    : [state.p2_S, state.p2_M, state.p2_L];
+  for (const bb of bbs) occupancy |= bb;
+
+  for (const wm of WIN_MASKS) {
+    if ((occupancy & wm) === wm) return true;
+  }
+  return false;
+}
+
+function checkTerminalState(state) {
+  // Check if the player who just moved won
+  const mover = state.currentPlayer === 'p1' ? 'p2' : 'p1';
+  if (checkWin(state, mover)) {
+    return { terminal: true, winner: mover };
+  }
+  if (checkWin(state, state.currentPlayer)) {
+    return { terminal: true, winner: state.currentPlayer };
+  }
+  // Check deadlock
+  const p1Moves = getLegalMoves(state, 'p1');
+  const p2Moves = getLegalMoves(state, 'p2');
+  if (p1Moves.length === 0 && p2Moves.length === 0) {
+    if (state.piecesPlayed.p1 > state.piecesPlayed.p2) {
+      return { terminal: true, winner: 'p1' };
+    } else if (state.piecesPlayed.p2 > state.piecesPlayed.p1) {
+      return { terminal: true, winner: 'p2' };
+    } else {
+      return { terminal: true, winner: 'draw' };
+    }
+  }
+  return { terminal: false };
+}
+
+// evaluateGameStatus: checks terminal, then auto-passes if current player stuck
+function evaluateGameStatus(state) {
+  const result = checkTerminalState(state);
+  if (result.terminal) return result;
+
+  // Auto-pass: if currentPlayer has 0 legal moves but opponent can move, toggle turn
+  if (getLegalMoves(state, state.currentPlayer).length === 0) {
+    const opp = getOpponent(state.currentPlayer);
+    if (getLegalMoves(state, opp).length > 0) {
+      state.currentPlayer = opp;
+      state.hash ^= zobristTable[54]; // toggle turn bit
+    }
+  }
+
+  return { terminal: false };
+}
+
+function heuristicEvaluation(state, forPlayer) {
+  let score = 0;
+  const other = getOpponent(forPlayer);
+
+  const forBBS = forPlayer === 'p1'
+    ? [state.p1_S, state.p1_M, state.p1_L]
+    : [state.p2_S, state.p2_M, state.p2_L];
+  const otherBBS = forPlayer === 'p1'
+    ? [state.p2_S, state.p2_M, state.p2_L]
+    : [state.p1_S, state.p1_M, state.p1_L];
+
+  let forOcc = 0, otherOcc = 0;
+  for (const bb of forBBS) forOcc |= bb;
+  for (const bb of otherBBS) otherOcc |= bb;
+
+  for (const wm of WIN_MASKS) {
+    if ((forOcc & wm) === wm) return 1000000;
+    if ((otherOcc & wm) === wm) return -1000000;
+  }
+
+  for (const tm of TWO_MASKS) {
+    const for2 = (forOcc & tm) === tm;
+    const other2 = (otherOcc & tm) === tm;
+    if (for2 && !other2) score += 40;
+    if (other2 && !for2) score -= 40;
+  }
+
+  score += (state.piecesPlayed[forPlayer] - state.piecesPlayed[other]) * 3;
+
+  const forL = forPlayer === 'p1' ? popcount(state.p1_L) : popcount(state.p2_L);
+  const forM = forPlayer === 'p1' ? popcount(state.p1_M) : popcount(state.p2_M);
+  const forS = forPlayer === 'p1' ? popcount(state.p1_S) : popcount(state.p2_S);
+  const otherL = forPlayer === 'p1' ? popcount(state.p2_L) : popcount(state.p1_L);
+  const otherM = forPlayer === 'p1' ? popcount(state.p2_M) : popcount(state.p1_M);
+  const otherS = forPlayer === 'p1' ? popcount(state.p2_S) : popcount(state.p1_S);
+  score += (forM - otherM) * 8 + (forL - otherL) * 2 + (forS - otherS) * 1;
+
+  const forLCenter = (forPlayer === 'p1' ? state.p1_L : state.p2_L) & (1 << 4);
+  if (forOcc & (1 << 4)) {
+    if (forLCenter) {
+      score += 2;
+    } else {
+      score += 8;
+    }
+  }
+  if (otherOcc & (1 << 4)) score -= 6;
+
+  const forInvL = state.inventory[forPlayer].L;
+  const otherInvL = state.inventory[other].L;
+  score += (forInvL - otherInvL) * 60;
+
+  const forInvM = state.inventory[forPlayer].M;
+  const otherInvM = state.inventory[other].M;
+  score += (forInvM - otherInvM) * 8;
+
+  const forInvS = state.inventory[forPlayer].S;
+  const otherInvS = state.inventory[other].S;
+  score += (forInvS - otherInvS) * 2;
+
+  return score;
+}
+
+// Count set bits — Brian Kernighan's Algorithm
+function popcount(n) {
+  let count = 0;
+  while (n) {
+    n &= (n - 1);
+    count++;
+  }
+  return count;
+}
+
+// ============================================================
+// STEP 4: Minimax with Transposition Table
+// ============================================================
+
+const TT_MAX_SIZE = 500000;
+let transpositionTable = new Map();
+
+const TT_EXACT = 0;
+const TT_LOWER = 1;
+const TT_UPPER = 2;
+
+function getPlayerOcc(state, player) {
+  if (player === 'p1') return state.p1_S | state.p1_M | state.p1_L;
+  return state.p2_S | state.p2_M | state.p2_L;
+}
+
+function checkWinFast(state, player) {
+  const occ = getPlayerOcc(state, player);
+  return (occ & WIN_MASKS[0]) === WIN_MASKS[0] ||
+         (occ & WIN_MASKS[1]) === WIN_MASKS[1] ||
+         (occ & WIN_MASKS[2]) === WIN_MASKS[2] ||
+         (occ & WIN_MASKS[3]) === WIN_MASKS[3] ||
+         (occ & WIN_MASKS[4]) === WIN_MASKS[4] ||
+         (occ & WIN_MASKS[5]) === WIN_MASKS[5] ||
+         (occ & WIN_MASKS[6]) === WIN_MASKS[6] ||
+         (occ & WIN_MASKS[7]) === WIN_MASKS[7];
+}
+
+function deadlockScore(state, depth, aiPlayer) {
+  if (state.piecesPlayed.p1 > state.piecesPlayed.p2) {
+    return aiPlayer === 'p1' ? (1000000 + depth) : (-1000000 - depth);
+  } else if (state.piecesPlayed.p2 > state.piecesPlayed.p1) {
+    return aiPlayer === 'p2' ? (1000000 + depth) : (-1000000 - depth);
+  }
+  return 0;
+}
+
+function minimax(state, depth, alpha, beta, isMaximizing, aiPlayer) {
+  // TT key: string template to prevent collisions
+  const hashKey = `${state.hash}*${depth}*${aiPlayer}`;
+  const ttEntry = transpositionTable.get(hashKey);
+  if (ttEntry && ttEntry.depth >= depth) {
+    if (ttEntry.flag === TT_EXACT) return ttEntry.score;
+    if (ttEntry.flag === TT_LOWER) alpha = Math.max(alpha, ttEntry.score);
+    if (ttEntry.flag === TT_UPPER) beta = Math.min(beta, ttEntry.score);
+    if (alpha >= beta) return ttEntry.score;
+  }
+
+  const mover = state.currentPlayer === 'p1' ? 'p2' : 'p1';
+  if (checkWinFast(state, mover)) {
+    const s = (1000000 + depth) * (mover === aiPlayer ? 1 : -1);
+    transpositionTable.set(hashKey, { score: s, depth, flag: TT_EXACT });
+    return s;
+  }
+
+  if (depth === 0) {
+    const s = heuristicEvaluation(state, aiPlayer);
+    transpositionTable.set(hashKey, { score: s, depth: 0, flag: TT_EXACT });
+    return s;
+  }
+
+  const legalMoves = getLegalMoves(state, state.currentPlayer);
+
+  if (legalMoves.length === 0) {
+    const oppMoves = getLegalMoves(state, getOpponent(state.currentPlayer));
+    if (oppMoves.length > 0) {
+      state.currentPlayer = getOpponent(state.currentPlayer);
+      state.hash ^= zobristTable[54];
+      const score = minimax(state, depth - 1, alpha, beta, !isMaximizing, aiPlayer);
+      state.currentPlayer = getOpponent(state.currentPlayer);
+      state.hash ^= zobristTable[54];
+      transpositionTable.set(hashKey, { score, depth, flag: TT_EXACT });
+      return score;
+    }
+    const s = deadlockScore(state, depth, aiPlayer);
+    transpositionTable.set(hashKey, { score: s, depth, flag: TT_EXACT });
+    return s;
+  }
+
+  orderMoves(legalMoves);
+
+  if (isMaximizing) {
+    let bestScore = -Infinity;
+    for (const move of legalMoves) {
+      const captured = makeMove(state, move);
+      const score = minimax(state, depth - 1, alpha, beta, false, aiPlayer);
+      undoMove(state, move, captured);
+      if (score > bestScore) bestScore = score;
+      if (score > alpha) alpha = score;
+      if (beta <= alpha) {
+        transpositionTable.set(hashKey, { score: bestScore, depth, flag: TT_LOWER });
+        return bestScore;
+      }
+    }
+    transpositionTable.set(hashKey, { score: bestScore, depth, flag: TT_EXACT });
+    return bestScore;
+  } else {
+    let bestScore = Infinity;
+    for (const move of legalMoves) {
+      const captured = makeMove(state, move);
+      const score = minimax(state, depth - 1, alpha, beta, true, aiPlayer);
+      undoMove(state, move, captured);
+      if (score < bestScore) bestScore = score;
+      if (score < beta) beta = score;
+      if (beta <= alpha) {
+        transpositionTable.set(hashKey, { score: bestScore, depth, flag: TT_UPPER });
+        return bestScore;
+      }
+    }
+    transpositionTable.set(hashKey, { score: bestScore, depth, flag: TT_EXACT });
+    return bestScore;
+  }
+}
+
+function findBestMove(state, depth = 8, aiPlayer = 'p1') {
+  if (transpositionTable.size > TT_MAX_SIZE) {
+    transpositionTable = new Map();
+  }
+
+  const legalMoves = getLegalMoves(state, state.currentPlayer);
+  if (legalMoves.length === 0) return null;
+
+  orderMoves(legalMoves);
+
+  const isMaximizing = state.currentPlayer === aiPlayer;
+  let bestScore = isMaximizing ? -Infinity : Infinity;
+  let bestMove = legalMoves[0];
+  let alpha = -Infinity;
+  let beta = Infinity;
+
+  for (const move of legalMoves) {
+    const captured = makeMove(state, move);
+    const score = minimax(state, depth - 1, alpha, beta, !isMaximizing, aiPlayer);
+    undoMove(state, move, captured);
+
+    if (isMaximizing) {
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+    } else {
+      if (score < bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      beta = Math.min(beta, score);
+    }
+  }
+
+  return bestMove;
+}
+
+// ============================================================
+// STEP 5: Frontend Interface
+// ============================================================
+
+let gameState = createInitialState();
+let selectedPiece = null;
+let cachedBestMove = null;
+let historyStack = []; // Undo history
+
+function cloneState(state) {
+  return {
+    p1_S: state.p1_S, p1_M: state.p1_M, p1_L: state.p1_L,
+    p2_S: state.p2_S, p2_M: state.p2_M, p2_L: state.p2_L,
+    inventory: {
+      p1: { L: state.inventory.p1.L, M: state.inventory.p1.M, S: state.inventory.p1.S },
+      p2: { L: state.inventory.p2.L, M: state.inventory.p2.M, S: state.inventory.p2.S }
+    },
+    piecesPlayed: { p1: state.piecesPlayed.p1, p2: state.piecesPlayed.p2 },
+    currentPlayer: state.currentPlayer,
+    hash: state.hash,
+    gameOver: state.gameOver,
+    winner: state.winner
+  };
+}
+
+function undoLastMove() {
+  if (historyStack.length === 0 || isProcessing) return;
+  gameState = historyStack.pop();
+  selectedPiece = null;
+  cachedBestMove = null;
+  renderAll();
+  updateStatus("Move undone.");
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  for (let sq = 0; sq < 9; sq++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.square = sq;
+
+    let found = false;
+    for (const size of ['L', 'M', 'S']) {
+      for (const player of ['p1', 'p2']) {
+        const propName = `${player}_${size}`;
+        const bb = gameState[propName];
+        if (bb & (1 << sq)) {
+          const piece = document.createElement('div');
+          piece.className = `board-piece ${player}-piece ${size}`;
+          piece.textContent = size;
+          cell.appendChild(piece);
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+
+    board.appendChild(cell);
+  }
+}
+
+function renderInventory() {
+  for (const player of ['p1', 'p2']) {
+    const container = document.getElementById(`${player}-inventory`);
+    container.innerHTML = '';
+
+    const sizeDefs = [
+      { key: 'L', label: 'Large',  count: 2 },
+      { key: 'M', label: 'Medium', count: 3 },
+      { key: 'S', label: 'Small',  count: 3 },
+    ];
+
+    for (const { key, label, count } of sizeDefs) {
+      const section = document.createElement('div');
+      section.className = 'inv-section';
+
+      const lbl = document.createElement('div');
+      lbl.className = 'inv-section-label';
+      lbl.textContent = label;
+      section.appendChild(lbl);
+
+      for (let i = 0; i < count; i++) {
+        const piece = document.createElement('div');
+        const remaining = gameState.inventory[player][key];
+        const isUsed = i >= remaining;
+        const isAvailable = !isUsed && gameState.currentPlayer === player && !gameState.gameOver;
+
+        piece.className = `inv-piece ${player}-piece ${key}`;
+        if (isUsed) piece.classList.add('disabled');
+        if (isAvailable && selectedPiece && selectedPiece.player === player && selectedPiece.size === key && i < remaining) {
+          piece.classList.add('selected');
+        }
+
+        piece.textContent = key;
+        piece.addEventListener('click', () => {
+          if (isAvailable) {
+            selectedPiece = { player, size: key };
+            updateSelectedIndicator();
+            renderInventory();
+          }
+        });
+        section.appendChild(piece);
+      }
+
+      container.appendChild(section);
+    }
+  }
+}
+
+function updateSelectedIndicator() {
+  const el = document.getElementById('selected-indicator');
+  if (selectedPiece) {
+    const playerName = selectedPiece.player === 'p1' ? 'Player 1' : 'Player 2';
+    const sizeName = { L: 'Large', M: 'Medium', S: 'Small' };
+    el.textContent = `Selected: ${sizeName[selectedPiece.size]} (${selectedPiece.size})`;
+  } else {
+    el.textContent = '';
+  }
+}
+
+function renderPiecesPlayed() {
+  document.getElementById('p1-played').textContent = gameState.piecesPlayed.p1;
+  document.getElementById('p2-played').textContent = gameState.piecesPlayed.p2;
+}
+
+function renderActivePlayer() {
+  document.getElementById('p1-panel').classList.toggle('active', gameState.currentPlayer === 'p1');
+  document.getElementById('p2-panel').classList.toggle('active', gameState.currentPlayer === 'p2');
+}
+
+function renderStatus() {
+  const el = document.getElementById('status');
+  if (gameState.gameOver) {
+    el.classList.add('win');
+    if (gameState.winner === 'draw') {
+      el.textContent = 'Game Over — Draw!';
+    } else {
+      const name = gameState.winner === 'p1' ? 'Player 1' : 'Player 2';
+      el.textContent = `Game Over — ${name} wins!`;
+    }
+  } else {
+    el.classList.remove('win');
+    const name = gameState.currentPlayer === 'p1' ? 'Player 1' : 'Player 2';
+    el.textContent = `${name}'s turn — select a piece`;
+  }
+}
+
+function renderAll() {
+  renderBoard();
+  renderInventory();
+  renderPiecesPlayed();
+  renderActivePlayer();
+  renderStatus();
+}
+
+function onCellClick(sq) {
+  if (isProcessing) return;
+  if (gameState.gameOver) return;
+  if (!selectedPiece) {
+    updateStatus("Please select a piece from your inventory first");
+    return;
+  }
+
+  if (selectedPiece.player !== gameState.currentPlayer) {
+    updateStatus("Not your turn!");
+    return;
+  }
+
+  const move = {
+    player: selectedPiece.player,
+    size: selectedPiece.size,
+    square: sq
+  };
+
+  const legalMoves = getLegalMoves(gameState, gameState.currentPlayer);
+  const isLegal = legalMoves.some(m => m.size === move.size && m.square === move.square);
+
+  if (!isLegal) {
+    updateStatus("Illegal move! Can only gobble smaller opponent pieces.");
+    return;
+  }
+
+  // Save state for undo BEFORE making the move
+  historyStack.push(cloneState(gameState));
+
+  // Make the move (mutates gameState in place)
+  makeMove(gameState, move);
+
+  // Check game status (includes auto-pass)
+  const result = evaluateGameStatus(gameState);
+  if (result.terminal) {
+    gameState.gameOver = true;
+    gameState.winner = result.winner;
+  }
+
+  cachedBestMove = null;
+  selectedPiece = null;
+  updateSelectedIndicator();
+  renderAll();
+}
+
+function updateStatus(msg) {
+  const el = document.getElementById('status');
+  el.classList.remove('win');
+  el.textContent = msg;
+}
+
+// ============================================================
+// Analyze Best Move
+// ============================================================
+
+let isProcessing = false;
+
+function analyzeBestMove() {
+  if (gameState.gameOver || isProcessing) return;
+
+  isProcessing = true;
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+
+  updateStatus("AI is thinking...");
+
+  setTimeout(() => {
+    cachedBestMove = findBestMove(gameState, 8, gameState.currentPlayer);
+
+    if (cachedBestMove) {
+      const bestMove = cachedBestMove;
+      const playerName = bestMove.player === 'p1' ? 'Player 1' : 'Player 2';
+      const sizeName = { L: 'Large', M: 'Medium', S: 'Small' };
+
+      const cells = document.querySelectorAll('.cell');
+      cells[bestMove.square].classList.add('highlight-target');
+
+      selectedPiece = bestMove;
+      updateSelectedIndicator();
+      renderInventory();
+
+      updateStatus(`${playerName} should play ${sizeName[bestMove.size]} at square ${bestMove.square}`);
+
+      setTimeout(() => {
+        cells[bestMove.square].classList.remove('highlight-target');
+      }, 8000);
+    } else {
+      updateStatus("No legal moves available.");
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Analyze Best Move';
+    isProcessing = false;
+  }, 50);
+}
+
+// ============================================================
+// Auto Play Best Move
+// ============================================================
+
+function autoPlayBestMove() {
+  if (gameState.gameOver || isProcessing) return;
+
+  isProcessing = true;
+  const btn = document.getElementById('auto-btn');
+  btn.disabled = true;
+  btn.textContent = 'Thinking...';
+
+  const currentPlayer = gameState.currentPlayer;
+
+  if (cachedBestMove) {
+    const legalMoves = getLegalMoves(gameState, currentPlayer);
+    const stillLegal = legalMoves.some(m => m.size === cachedBestMove.size && m.square === cachedBestMove.square);
+
+    if (stillLegal) {
+      playBestMove(cachedBestMove, btn);
+      return;
+    }
+  }
+
+  updateStatus(`${currentPlayer === 'p1' ? 'Player 1' : 'Player 2'} is thinking...`);
+
+  setTimeout(() => {
+    cachedBestMove = findBestMove(gameState, 8, currentPlayer);
+
+    if (cachedBestMove) {
+      playBestMove(cachedBestMove, btn);
+    } else {
+      updateStatus("No legal moves available.");
+      btn.disabled = false;
+      btn.textContent = 'Auto Play Best Move';
+      isProcessing = false;
+    }
+  }, 50);
+}
+
+function playBestMove(bestMove, btn) {
+  const playerName = bestMove.player === 'p1' ? 'Player 1' : 'Player 2';
+  const sizeName = { L: 'Large', M: 'Medium', S: 'Small' };
+
+  const cells = document.querySelectorAll('.cell');
+  cells[bestMove.square].classList.add('highlight-target');
+
+  selectedPiece = bestMove;
+  updateSelectedIndicator();
+  renderInventory();
+
+  setTimeout(() => {
+    // Save state for undo BEFORE making the move
+    historyStack.push(cloneState(gameState));
+
+    // Play the move (mutates gameState in place)
+    makeMove(gameState, bestMove);
+
+    // Check game status (includes auto-pass)
+    const result = evaluateGameStatus(gameState);
+    if (result.terminal) {
+      gameState.gameOver = true;
+      gameState.winner = result.winner;
+    }
+
+    selectedPiece = null;
+    cachedBestMove = null;
+    updateSelectedIndicator();
+    renderAll();
+
+    cells[bestMove.square].classList.remove('highlight-target');
+
+    updateStatus(`${playerName} played ${sizeName[bestMove.size]} → square ${bestMove.square}`);
+
+    btn.disabled = false;
+    btn.textContent = 'Auto Play Best Move';
+    isProcessing = false;
+  }, 1200);
+}
+
+// ============================================================
+// Reset Game
+// ============================================================
+
+function resetGame() {
+  if (isProcessing) return;
+  gameState = createInitialState();
+  selectedPiece = null;
+  cachedBestMove = null;
+  historyStack = []; // Clear undo history
+  transpositionTable = new Map();
+  updateSelectedIndicator();
+  renderAll();
+  const analyzeBtn = document.getElementById('analyze-btn');
+  analyzeBtn.disabled = false;
+  analyzeBtn.textContent = 'Analyze Best Move';
+  const autoBtn = document.getElementById('auto-btn');
+  autoBtn.disabled = false;
+  autoBtn.textContent = 'Auto Play Best Move';
+}
+
+// ============================================================
+// Initialize
+// ============================================================
+
+// Event delegation: single listener on #board for all cell clicks
+document.getElementById('board').addEventListener('click', function(e) {
+  const cell = e.target.closest('.cell');
+  if (cell) {
+    onCellClick(parseInt(cell.dataset.square, 10));
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
