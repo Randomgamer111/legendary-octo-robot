@@ -17,7 +17,17 @@
     padding: 20px;
   }
   h1 { font-size: 2.4em; margin-bottom: 8px; color: #fff; text-shadow: 0 0 10px rgba(100,180,255,0.4); }
-  .subtitle { font-size: 0.85em; color: #888; margin-bottom: 18px; }
+  .subtitle {
+    font-size: 0.85em;
+    color: #888;
+    margin-bottom: 18px;
+    cursor: default;
+    transition: color 0.3s ease;
+    user-select: none;
+  }
+  .subtitle:hover {
+    color: #ffffff;
+  }
 
   /* Layout */
   .game-container {
@@ -271,6 +281,35 @@
 <div class="footer-credit">Created by Helios</div>
 
 <script>
+// ============================================================
+// Easter Egg Hidden Messages
+// ============================================================
+
+const easterEggs = [
+  "Funny how 'killing the game' is only a problem when you guys aren't the ones doing it",
+  "Eternity loved the monopoly until they became the product",
+  "Wait, so when you absorbed every guild on your server, it was 'strategy,' but now that you can't dominate, Boba is 'killing the game'? Make it make sense",
+  "You didn't care about the game dying when you were the ones choking it out. You're just mad someone else is holding the crown",
+  "Imagine being the architects of killing the competition and then complaining when it's no longer working for you. Absolute clown behavior",
+  "Your dominance lasted for an eternity... if an eternity is about five minutes after the server merge",
+  "I guess 'Eternity' actually refers to how long it's taking you guys to accept the L",
+  "Eternally salty",
+];
+
+(function initEasterEgg() {
+  const subtitle = document.querySelector('.subtitle');
+  const originalText = subtitle.textContent;
+
+  subtitle.addEventListener('mouseenter', () => {
+    const randomIndex = Math.floor(Math.random() * easterEggs.length);
+    subtitle.textContent = easterEggs[randomIndex];
+  });
+
+  subtitle.addEventListener('mouseleave', () => {
+    subtitle.textContent = originalText;
+  });
+})();
+
 // ============================================================
 // STEP 1: State Representation (Bitboards & Zobrist Hashing)
 // ============================================================
